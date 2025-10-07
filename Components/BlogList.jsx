@@ -17,6 +17,10 @@ const BlogList = () => {
       fetchBlogs();
     },[])
 
+    // NOTE: avoid client-side inserting <link rel="preload"> for original public URLs when using next/image
+    // next/image serves optimized URLs (/_next/image...) so preloading the original file may trigger
+    // "preloaded but not used" warnings. We rely on next/image's `priority` prop for above-the-fold images instead.
+
   return (
     <div>
       <div className='flex justify-center gap-6 my-10'>
@@ -26,9 +30,12 @@ const BlogList = () => {
         <button onClick={()=>setMenu('Lifestyle')} className={menu==="Lifestyle"?'bg-black text-white py-1 px-4 rounded-sm':""}>Lifestyle</button>
       </div>
       <div className='flex flex-wrap justify-around gap-1 gap-y-10 mb-16 xl:mx-24'>
-        {blogs.filter((item)=> menu==="All"?true:item.category===menu).map((item,index)=>{
-            return <BlogItem key={index} id={item._id} image={item.image} title={item.title} description={item.description} category={item.category} />
-        })}
+    {blogs.filter((item)=> menu==="All"?true:item.category===menu).map((item,index)=>{
+            // mark the first few visible blog images as priority (likely above-the-fold / LCP)
+            // increase from 1 to 3 to cover multiple columns/viewport sizes
+            const isPriority = index < 3;
+            return <BlogItem key={index} id={item._id} image={item.image} title={item.title} description={item.description} category={item.category} priority={isPriority} />
+    })}
       </div>
     </div>
   )
