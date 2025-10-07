@@ -3,11 +3,27 @@ import { assets } from '@/Assets/assets'
 import axios from 'axios'
 import Image from 'next/image'
 import React, { useState } from 'react'
+import { useEffect } from 'react'
 import { toast } from 'react-toastify'
 
 const Page = () => {
 
-    const [image,setImage] = useState(false);
+  const [image,setImage] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+    useEffect(() => {
+      if (!image) {
+        setPreviewUrl(null);
+        return;
+      }
+
+      const url = URL.createObjectURL(image);
+      setPreviewUrl(url);
+
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    }, [image]);
     const [data,setData] = useState({
         title:"",
         description:"",
@@ -23,7 +39,7 @@ const Page = () => {
         console.log(data);
     }
 
-    const onSubmitHandler = async (e) =>{
+  const onSubmitHandler = async (e) =>{
         e.preventDefault();
         const formData = new FormData();
         formData.append('title',data.title);
@@ -54,9 +70,24 @@ const Page = () => {
       <form onSubmit={onSubmitHandler} className='pt-5 px-5 sm:pt-12 sm:pl-16'>
         <p className='text-xl'>Upload thumbnail</p>
         <label htmlFor="image">
-            <Image className='mt-4' src={!image?assets.upload_area:URL.createObjectURL(image)} width={140} height={70} alt=''/>
+          {image ? (
+            // File preview: use a normal <img> to avoid next/image optimization/warnings for object URLs
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className='mt-4 w-auto h-auto object-contain border'
+              src={previewUrl}
+              width={140}
+              height={70}
+              alt="preview"
+            />
+          ) : (
+            // static asset: use next/image with fill inside a fixed-size wrapper to avoid CSS size mismatch warnings
+            <div className='mt-4 border' style={{ width: 140, height: 70, position: 'relative' }}>
+              <Image src={assets.upload_area} alt='upload area' fill sizes="140px" style={{ objectFit: 'contain' }} />
+            </div>
+          )}
         </label>
-        <input onChange={(e)=>setImage(e.target.files[0])} type="file" id='image' hidden required />
+  <input onChange={(e)=>setImage(e.target.files[0])} type="file" id='image' hidden required />
         <p className='text-xl mt-4'>Blog title</p>
         <input name='title' onChange={onChangeHandler} value={data.title} className='w-full sm:w-[500px] mt-4 px-4 py-3 border' type="text" placeholder='Type here' required />
         <p className='text-xl mt-4'>Blog Description</p>
